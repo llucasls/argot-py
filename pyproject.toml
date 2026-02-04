@@ -1,0 +1,12 @@
+[build-system]
+requires = ["uv_build>=0.9.28,<0.10.0"]
+build-backend = "uv_build"
+
+[project]
+name = "argot-cli"
+version = "0.1.0"
+authors = [
+    { name = "Lucas L. S. Haine", email = "lucaslshaine@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = []
