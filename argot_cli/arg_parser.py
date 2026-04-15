@@ -1,72 +1,9 @@
 from abc import ABCMeta
 import re
-from typing import cast, Final, TypedDict
+from typing import Final, TypedDict, cast
 
 import argot_cli.argot_types as t
 from argot_cli.argot_errors import NullArgError, NullIntError
-
-
-class ArgParserResult[K, V](dict[K, V], metaclass=ABCMeta):
-    __slots__ = ('_frozen',)
-    _frozen: bool
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._frozen = False
-
-    def __setitem__(self, key: K, value: V, /):
-        if self._frozen:
-            raise TypeError('you cannot modify option values')
-        super().__setitem__(key, value)
-
-    def __delitem__(self, key: K, /):
-        if self._frozen:
-            raise TypeError('you cannot delete parsed options')
-        super().__delitem__(key)
-
-    def clear(self, /):
-        if self._frozen:
-            raise TypeError('you cannot delete parsed options')
-        super().clear()
-
-    def pop(self, key: K, /, *args) -> V:
-        if self._frozen:
-            raise TypeError('you cannot delete parsed options')
-        return super().pop(key, *args)
-
-    def popitem(self, /) -> tuple[K, V]:
-        if self._frozen:
-            raise TypeError('you cannot delete parsed options')
-        return super().popitem()
-
-    def setdefault(self, key: K, default=None, /) -> V:
-        if self._frozen:
-            raise TypeError('you cannot modify option values')
-        return super().setdefault(key, default)
-
-    def _freeze(self):
-        self._frozen = True
-
-
-class Options(ArgParserResult[str, t.OptionValue]):
-    """short options and GNU-style long optons"""
-    __slots__ = ()
-
-
-class Parameters(ArgParserResult[str, str]):
-    """name=value variable assignments"""
-    __slots__ = ()
-
-
-class Operands(list[str]):
-    """command-line positional arguments"""
-    __slots__ = ()
-
-
-class ParseResult(TypedDict):
-    options: Options
-    parameters: Parameters
-    operands: Operands
 
 
 class ArgParser:
@@ -74,16 +11,18 @@ class ArgParser:
     short_opt_exp = re.compile(r'^-[^-]')
     assignment_exp = re.compile(r'^--([^=]+)=(.+)?')
     parameter_exp = re.compile(r'^([^=]+)=(.+)?')
-    _configs: dict[str, t.ConfigEntry]
+    _configs: t.ParserConfig
     __slots__ = ('_configs',)
 
-    def __init__(self, configs: dict[str, t.ConfigEntry], /):
+    def __init__(self, configs: t.ParserConfig, /):
+        if not isinstance(configs, t.ParserConfig):
+            raise TypeError('input value must be an instance of ParserConfig')
         self._configs = configs
 
-    def parse(self, arg_list: list[str], /) -> ParseResult:
-        options = Options()
-        parameters = Parameters()
-        operands = Operands()
+    def parse(self, arg_list: list[str], /) -> t.ParseResult:
+        options = t.Options()
+        parameters = t.Parameters()
+        operands = t.Operands()
 
         if not isinstance(arg_list, list):
             raise TypeError('arg_list must be a list of strings')
@@ -144,6 +83,7 @@ class ArgParser:
 
         options._freeze()
         parameters._freeze()
+        operands._freeze()
         return {
             'options': options,
             'parameters': parameters,
