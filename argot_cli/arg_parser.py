@@ -4,22 +4,77 @@ from typing import Final, TypedDict, cast
 
 import argot_cli.argot_types as t
 from argot_cli.argot_errors import NullArgError, NullIntError
+from argot_cli.parser_config import ParserConfig
 
 
 class ArgParser:
+    """
+    Command-line argument parser.
+
+    The parser processes an array of strings according to a
+    configuration and produces a structured result.
+
+    Parsing follows UNIX-style short options and GNU-style long
+    options.
+    """
     long_opt_exp = re.compile(r'^--')
     short_opt_exp = re.compile(r'^-[^-]')
     assignment_exp = re.compile(r'^--([^=]+)=(.+)?')
     parameter_exp = re.compile(r'^([^=]+)=(.+)?')
-    _configs: t.ParserConfig
+    _configs: ParserConfig
     __slots__ = ('_configs',)
 
-    def __init__(self, configs: t.ParserConfig, /):
-        if not isinstance(configs, t.ParserConfig):
+    def __init__(self, configs: ParserConfig, /):
+        if not isinstance(configs, ParserConfig):
             raise TypeError('input value must be an instance of ParserConfig')
         self._configs = configs
 
     def parse(self, arg_list: list[str], /) -> t.ParseResult:
+        """
+        Parse an array of command-line arguments.
+
+        Arguments are processed from left to right. Each argument is
+        classified as one of:
+
+        - option: matches a configured short or long option
+        - parameter: of the form "key=value"
+        - operand: any other argument
+
+        Parsing rules:
+
+        - The literal "--" stops option parsing. All subsequent
+          arguments are treated as operands.
+        - Short options may be combined (e.g. "-abc").
+        - If a short option that accepts an associated value is not the
+          last character in a group, the remainder of the argument is
+          used as its value (e.g. "-n10").
+        - If a short option that accepts an associated value appears as
+          the last character:
+            - If the option has a default value, no additional argument
+              is consumed.
+            - Otherwise, the next argument is used as its value.
+        - Long options must be provided in the form "--name" if they do
+          not accept an associated value, or "--name=value" if they do.
+        - Long options that accept an associated value never consume
+          the next argument.
+        - Parameters are parsed from arguments matching "key=value" and
+          are stored separately from options.
+        - If an option is repeated:
+            - count and list options accumulate values
+            - other options overwrite previous values
+        - Alias options store their values under the target option's
+          name.
+
+        Returns:
+            A mapping with three entries:
+            - options: parsed option values
+            - parameters: key/value assignments
+            - operands: positional arguments
+
+        Raises:
+            Error: if an unknown option is encountered or a required
+            value is missing.
+        """
         options = t.Options()
         parameters = t.Parameters()
         operands = t.Operands()
@@ -105,7 +160,7 @@ class ArgParser:
             value = None
 
         entry: t.ConfigEntry = self._configs[name]
-        tag: t.OptionType = entry['type']
+        tag: str = entry['type']
         new_value: t.OptionValue
 
         match tag:
@@ -142,7 +197,7 @@ class ArgParser:
             case t.OptionType.ALIAS:
                 target = cast(t.AliasEntry, entry)['target']
                 target_entry: t.ConfigEntry = self._configs[target]
-                target_type: t.OptionType = target_entry['type']
+                target_type: str = target_entry['type']
 
                 match target_type:
                     case t.OptionType.FLAG:
@@ -198,7 +253,7 @@ class ArgParser:
             name = arg[i]
             value = next_arg
             entry = self._configs[name]
-            tag: t.OptionType = entry['type']
+            tag: str = entry['type']
             default: str | int
 
             match tag:
@@ -253,7 +308,7 @@ class ArgParser:
                 case t.OptionType.ALIAS:
                     target: str = cast(t.AliasEntry, entry)['target']
                     target_entry: t.ConfigEntry = self._configs[target]
-                    target_type: t.OptionType = target_entry['type']
+                    target_type: str = target_entry['type']
 
                     match target_type:
                         case t.OptionType.FLAG:

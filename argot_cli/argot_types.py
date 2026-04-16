@@ -8,11 +8,8 @@ from typing import (
     SupportsIndex,
     TypedDict,
     Union,
-    cast,
     overload,
 )
-
-from argot_cli.argot_utils import validate_entries
 
 
 class OptionType(StrEnum):
@@ -25,30 +22,75 @@ class OptionType(StrEnum):
 
 
 class FlagEntry(TypedDict):
-    type: Literal[OptionType.FLAG]
+    """
+    Flag option.
+
+    An option without arguments. When present in the command-line, it is
+    parsed as True. If the option is not provided, it does not appear in
+    the parsed options mapping.
+    """
+    type: Literal['flag']
 
 
 class TextEntry(TypedDict, total=False):
-    type: Literal[OptionType.TEXT]
+    """
+    Text option.
+
+    Accepts a string value.
+
+    If a default value is provided, the option may be specified without
+    an explicit value. Short options with a default value only accept an
+    associated value when provided in the same argument (e.g. "-fvalue").
+    """
+    type: Literal['text']
     default: str
 
 
 class IntEntry(TypedDict, total=False):
-    type: Literal[OptionType.INT]
+    """
+    Int option.
+
+    Accepts an integer value.
+
+    If a default value is provided, the option may be specified without
+    an explicit value. Short options with a default value only accept an
+    associated value when provided in the same argument (e.g. "-n58").
+    """
+    type: Literal['int']
     default: int
 
 
 class CountEntry(TypedDict):
-    type: Literal[OptionType.COUNT]
+    """
+    Count option.
+
+    Each occurrence increments an integer counter. The initial value
+    is 0.  If the option is not provided, it does not appear in the
+    parsed options mapping.
+    """
+    type: Literal['count']
 
 
 class ListEntry(TypedDict, total=False):
-    type: Literal[OptionType.LIST]
+    """
+    List option.
+
+    Creates a list of strings. Each occurrence is split using the
+    configured separator ("," by default), and the resulting values are
+    appended to the list.
+    """
+    type: Literal['list']
     sep: str
 
 
 class AliasEntry(TypedDict):
-    type: Literal[OptionType.ALIAS]
+    """
+    Alias option.
+
+    Refers to another option by name. When parsed, the value is stored
+    under the target option's name instead of the alias name.
+    """
+    type: Literal['alias']
     target: str
 
 
@@ -205,59 +247,36 @@ class ResultList[T](list[T], metaclass=ABCMeta):
         self._frozen = True
 
 
-class ParserConfig:
-    __slots__ = ('_entries')
-    _entries: dict[str, ConfigEntry]
-
-    def __init__(self, entries: ConfigEntries):
-        if isinstance(entries, dict):
-            self._entries = entries
-        elif isinstance(entries, list):
-            entry_map: dict[str, ConfigEntry] = {}
-            for entry in entries:
-                name = entry['option']
-                new_entry = {k: v for k, v in entry.items() if k != 'option'}
-                entry_map[name] = cast(ConfigEntry, new_entry)
-            self._entries = entry_map
-        else:
-            raise TypeError('input value must be a dict or list')
-        validate_entries(self._entries)
-
-    def __contains__(self, key: str, /) -> bool:
-        return key in self._entries
-
-    def __getitem__(self, key: str, /) -> ConfigEntry:
-        return self._entries[key]
-
-    def __len__(self, /) -> int:
-        return len(self._entries)
-
-    def __repr__(self, /) -> str:
-        name = self.__class__.__name__
-        return f'{name}({self._entries!r})'
-
-    def items(self, /) -> Iterable[tuple[str, ConfigEntry]]:
-        return self._entries.items()
-
-    def keys(self, /) -> Iterable[str]:
-        return self._entries.keys()
-
-    def values(self, /) -> Iterable[ConfigEntry]:
-        return self._entries.values()
-
-
 class Options(ResultMapping[str, OptionValue]):
-    """parsed option values (short and long options)"""
+    """
+    Mapping of parsed option values.
+
+    Values are determined by the configuration. Repeated options either
+    overwrite previous values or accumulate them, depending on their
+    type.
+
+    The mapping is immutable after parsing.
+    """
     __slots__ = ()
 
 
 class Parameters(ResultMapping[str, str]):
-    """name=value variable assignments"""
+    """
+    Mapping of key/value assignments.
+
+    Parameters are parsed from arguments of the form "key=value" and do
+    not depend on the parser configuration.
+    """
     __slots__ = ()
 
 
 class Operands(ResultList[str]):
-    """command-line positional arguments"""
+    """
+    Positional arguments.
+
+    Operands are arguments that are not parsed as options or parameters.
+    The list is immutable after parsing.
+    """
     __slots__ = ()
 
 
