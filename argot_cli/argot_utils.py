@@ -27,7 +27,7 @@ def validate_entry(entry: t.LabeledEntry) -> None:
         if key not in entry:
             raise ValueError(f"'{key}' not found in config entry")
 
-    tag: t.OptionType = entry['type']
+    tag: str = entry['type']
 
     match tag:
         case t.OptionType.FLAG:
@@ -73,7 +73,7 @@ def validate_entries(entries: dict[str, t.ConfigEntry]) -> None:
     for option, config in entries.items():
         entry = cast(t.LabeledEntry, {'option': option, **config})
         validate_entry(entry)
-        tag: t.OptionType = entry['type']
+        tag: str = entry['type']
 
         if tag == t.OptionType.ALIAS:
             target = cast(t.AliasEntry, entry)['target']
