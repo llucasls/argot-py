@@ -37,3 +37,6 @@ class NullIntError(Exception):
         else:
             msg = f"option '{name}' requires a numeric argument"
         super().__init__(msg, **kwargs)
+
+
+class InvalidIntError(Exception): ...
