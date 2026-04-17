@@ -54,7 +54,7 @@ def validate_entry(entry: t.LabeledEntry) -> None:
             if not isinstance(cast(t.AliasEntry, entry)['target'], str):
                 raise TypeError('target value must be a string')
         case _:
-            raise TypeError(f"opton type '{tag}' is not supported")
+            raise TypeError(f"option type '{tag}' is not supported")
 
 
 def validate_entries(entries: dict[str, t.ConfigEntry]) -> None:
