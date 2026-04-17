@@ -1,6 +1,16 @@
 from typing import cast
 
 import argot_cli.argot_types as t
+from argot_cli.argot_errors import InvalidIntError
+
+
+def parse_int(value: str) -> int:
+    """Parse a string with an integer numeric value."""
+    try:
+        return int(value)
+    except ValueError:
+        raise InvalidIntError(f"'{value}' is not a valid number") from None
+
 
 def validate_entry(entry: t.LabeledEntry) -> None:
     """
