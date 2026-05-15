@@ -3,7 +3,11 @@ import re
 from typing import Final, TypedDict, cast
 
 import argot_cli.argot_types as t
-from argot_cli.argot_errors import NullArgError, NullIntError
+from argot_cli.argot_errors import (
+    NullArgError,
+    NullIntError,
+    UnknownOptionError,
+)
 from argot_cli.parser_config import ParserConfig
 
 
@@ -22,7 +26,7 @@ class ArgParser:
     assignment_exp = re.compile(r'^--([^=]+)=(.+)?')
     parameter_exp = re.compile(r'^([^=]+)=(.+)?')
     _configs: ParserConfig
-    __slots__ = ('_configs',)
+    __slots__ = ['_configs']
 
     def __init__(self, configs: ParserConfig, /):
         if not isinstance(configs, ParserConfig):
@@ -115,11 +119,11 @@ class ArgParser:
                     next_arg = None
                 should_skip, pairs = self._parse_short_option(arg, next_arg)
                 for name, value in pairs.items():
-                    if self._configs[name]['type'] == t.OptionType.COUNT:
+                    if self._configs[name]['type'] == 'count':
                         old_value = cast(int, options.get(name, 0))
                         new_value = cast(int, value)
                         options[name] = old_value + new_value
-                    elif self._configs[name]['type'] == t.OptionType.LIST:
+                    elif self._configs[name]['type'] == 'list':
                         old_value = cast(list[str], options.get(name, []))
                         new_value = cast(list[str], value)
                         old_value.extend(new_value)
@@ -146,8 +150,6 @@ class ArgParser:
         }
 
     def _parse_long_option(self, arg: str) -> tuple[str, t.OptionValue]:
-        offset: Final[int] = 2
-
         name: str
         value: str | None
         try:
@@ -159,14 +161,19 @@ class ArgParser:
             name = arg[2:]
             value = None
 
-        entry: t.ConfigEntry = self._configs[name]
-        tag: str = entry['type']
+        try:
+            entry: t.ConfigEntry = self._configs[name]
+        except KeyError:
+            raise UnknownOptionError(name) from None
+
+        tag: t.OptionType = entry['type']
         new_value: t.OptionValue
 
         match tag:
-            case t.OptionType.FLAG:
+            case 'flag':
                 return (name, True)
-            case t.OptionType.TEXT:
+
+            case 'text':
                 if value is not None:
                     return (name, value)
                 elif 'default' in entry:
@@ -174,7 +181,8 @@ class ArgParser:
                     return (name, new_value)
 
                 raise NullArgError(name)
-            case t.OptionType.INT:
+
+            case 'int':
                 if value is not None and value != '':
                     return (name, int(value))
                 elif 'default' in entry:
@@ -182,11 +190,13 @@ class ArgParser:
                     return (name, new_value)
 
                 raise NullIntError(name)
-            case t.OptionType.COUNT:
+
+            case 'count':
                 if value is not None:
                     return (name, int(value))
                 return (name, 1)
-            case t.OptionType.LIST:
+
+            case 'list':
                 if value == '':
                     return (name, [])
                 elif value is not None:
@@ -194,15 +204,17 @@ class ArgParser:
                     return (name, value.split(sep))
 
                 raise NullArgError(name)
-            case t.OptionType.ALIAS:
+
+            case 'alias':
                 target = cast(t.AliasEntry, entry)['target']
                 target_entry: t.ConfigEntry = self._configs[target]
-                target_type: str = target_entry['type']
+                target_type: t.AliasType = cast(t.AliasType, target_entry['type'])
 
                 match target_type:
-                    case t.OptionType.FLAG:
+                    case 'flag':
                         return (target, True)
-                    case t.OptionType.TEXT:
+
+                    case 'text':
                         if value is not None:
                             return (target, value)
                         elif 'default' in target_entry:
@@ -210,7 +222,8 @@ class ArgParser:
                             return (target, new_value)
 
                         raise NullArgError(name, target)
-                    case t.OptionType.INT:
+
+                    case 'int':
                         if value is not None and value != '':
                             return (target, int(value))
                         elif 'default' in target_entry:
@@ -218,11 +231,13 @@ class ArgParser:
                             return (target, new_value)
 
                         raise NullIntError(name, target)
-                    case t.OptionType.COUNT:
+
+                    case 'count':
                         if value is not None:
                             return (target, int(value))
                         return (target, 1)
-                    case t.OptionType.LIST:
+
+                    case 'list':
                         if value == '':
                             return (target, [])
                         elif value is not None:
@@ -230,11 +245,6 @@ class ArgParser:
                             return (target, value.split(sep))
 
                         raise NullArgError(name, target)
-                    case _:
-                        msg = f"type '{target_type}' is not supported"
-                        raise TypeError(msg)
-            case _:
-                raise TypeError(f"type '{tag}' is not supported")
 
     def _parse_short_option(
         self,
@@ -252,14 +262,18 @@ class ArgParser:
         while i < n:
             name = arg[i]
             value = next_arg
-            entry = self._configs[name]
+            try:
+                entry = self._configs[name]
+            except KeyError:
+                raise UnknownOptionError(name) from None
             tag: str = entry['type']
             default: str | int
 
             match tag:
-                case t.OptionType.FLAG:
+                case 'flag':
                     pairs[name] = True
-                case t.OptionType.TEXT:
+
+                case 'text':
                     if i < n - 1:
                         value = arg[i + 1:n]
                         pairs[name] = value
@@ -273,7 +287,8 @@ class ArgParser:
                         return (True, pairs)
 
                     raise NullArgError(name)
-                case t.OptionType.INT:
+
+                case 'int':
                     if i < n - 1:
                         value = arg[i + 1:n]
                         pairs[name] = int(value)
@@ -287,10 +302,12 @@ class ArgParser:
                         return (True, pairs)
 
                     raise NullIntError(name)
-                case t.OptionType.COUNT:
+
+                case 'count':
                     old_value = cast(int, pairs.get(name, 0))
                     pairs[name] = old_value + 1
-                case t.OptionType.LIST:
+
+                case 'list':
                     if i < n - 1:
                         value = arg[i + 1:n]
                         sep = cast(t.ListEntry, entry).get('sep', ',')
@@ -305,15 +322,17 @@ class ArgParser:
                         return (True, pairs)
 
                     raise NullArgError(name)
-                case t.OptionType.ALIAS:
+
+                case 'alias':
                     target: str = cast(t.AliasEntry, entry)['target']
                     target_entry: t.ConfigEntry = self._configs[target]
-                    target_type: str = target_entry['type']
+                    target_type: t.AliasType = cast(t.AliasType, target_entry['type'])
 
                     match target_type:
-                        case t.OptionType.FLAG:
+                        case 'flag':
                             pairs[target] = True
-                        case t.OptionType.TEXT:
+
+                        case 'text':
                             if i < n - 1:
                                 value = arg[i + 1:n]
                                 pairs[target] = value
@@ -327,7 +346,8 @@ class ArgParser:
                                 return (True, pairs)
 
                             raise NullArgError(name, target)
-                        case t.OptionType.INT:
+
+                        case 'int':
                             if i < n - 1:
                                 value = arg[i + 1:n]
                                 pairs[target] = int(value)
@@ -341,10 +361,12 @@ class ArgParser:
                                 return (True, pairs)
 
                             raise NullIntError(name, target)
-                        case t.OptionType.COUNT:
+
+                        case 'count':
                             old_value = cast(int, pairs.get(target, 0))
                             pairs[target] = old_value + 1
-                        case t.OptionType.LIST:
+
+                        case 'list':
                             if i < n - 1:
                                 value = arg[i + 1:n]
                                 sep = cast(t.ListEntry, target_entry).get('sep', ',')
@@ -359,12 +381,6 @@ class ArgParser:
                                 return (True, pairs)
 
                             NullArgError(name, target)
-                        case _:
-                            msg = f'type {target_type} is not supported'
-                            raise TypeError(msg)
-                case _:
-                    raise TypeError(f'type {tag} is not supported')
 
             i += 1
-
         return (False, pairs)

@@ -17,7 +17,7 @@ class ParserConfig:
     The configuration is normalized and validated during construction.
     The resulting object is immutable.
     """
-    __slots__ = ('_entries')
+    __slots__ = ['_entries']
     _entries: dict[str, ConfigEntry]
 
     def __init__(self, entries: ConfigEntries):
@@ -46,6 +46,9 @@ class ParserConfig:
     def __repr__(self, /) -> str:
         name = self.__class__.__name__
         return f'{name}({self._entries!r})'
+
+    def get(self, key: str, /) -> ConfigEntry | None:
+        return self._entries.get(key)
 
     def items(self, /) -> Iterable[tuple[str, ConfigEntry]]:
         return self._entries.items()

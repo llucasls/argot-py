@@ -12,13 +12,23 @@ from typing import (
 )
 
 
-class OptionType(StrEnum):
-    FLAG = 'flag'
-    TEXT = 'text'
-    INT = 'int'
-    COUNT = 'count'
-    LIST = 'list'
-    ALIAS = 'alias'
+type OptionType = Union[
+    Literal['flag'],
+    Literal['text'],
+    Literal['int'],
+    Literal['count'],
+    Literal['list'],
+    Literal['alias'],
+]
+
+
+type AliasType = Union[
+    Literal['flag'],
+    Literal['text'],
+    Literal['int'],
+    Literal['count'],
+    Literal['list'],
+]
 
 
 class FlagEntry(TypedDict):

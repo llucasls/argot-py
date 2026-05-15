@@ -1,18 +1,31 @@
+import re
 from typing import cast
 
 import argot_cli.argot_types as t
-from argot_cli.argot_errors import InvalidIntError
+from argot_cli.argot_errors import (
+    InvalidIntError,
+    InvalidAliasTargetError,
+    InvalidOptionTypeError,
+    MissingOptionTypeError,
+    MissingOptionPropertyError,
+)
+
+
+INT_RE = re.compile(r'^(-|\+)?\d+$')
 
 
 def parse_int(value: str) -> int:
     """Parse a string with an integer numeric value."""
+
+    if not INT_RE.match(value):
+        raise InvalidIntError(value)
     try:
         return int(value)
     except ValueError:
-        raise InvalidIntError(f"'{value}' is not a valid number") from None
+        raise InvalidIntError(value) from None
 
 
-def validate_entry(entry: t.LabeledEntry) -> None:
+def validate_entry(name: str, entry: t.ConfigEntry) -> None:
     """
     Validate a single configuration entry.
 
@@ -28,43 +41,43 @@ def validate_entry(entry: t.LabeledEntry) -> None:
     Raises:
         TypeError: if a value has an invalid type or the option type is
         unsupported
+
         ValueError: if required fields are missing
+
+        MissingOptionPropertyError: if a required property is missing
+        InvalidOptionTypeError: if the option type is not supported
     """
     if not isinstance(entry, dict):
         raise TypeError('option config entry must be a dictionary')
-
-    for key in ['option', 'type']:
-        if key not in entry:
-            raise ValueError(f"'{key}' not found in config entry")
+    elif 'type' not in entry:
+        MissingOptionTypeError(name)
 
     tag: str = entry['type']
 
     match tag:
-        case t.OptionType.FLAG:
+        case 'flag' | 'count':
             pass
-        case t.OptionType.COUNT:
-            pass
-        case t.OptionType.TEXT:
+        case 'text':
             default = entry.get('default')
             if default is not None and not isinstance(default, str):
                 raise TypeError('default value must be a string')
-        case t.OptionType.INT:
+        case 'int':
             default = entry.get('default')
             if default is not None and not isinstance(default, int):
                 raise TypeError('default value must be an integer')
-        case t.OptionType.LIST:
+        case 'list':
             sep = entry.get('sep')
             if sep is not None and not isinstance(sep, str):
                 raise TypeError('sep value must be a string')
-        case t.OptionType.ALIAS:
+        case 'alias':
             if 'target' not in entry:
-                option = entry['option']
-                msg = f"'target' not found in alias option {option}"
-                raise ValueError(msg)
-            if not isinstance(cast(t.AliasEntry, entry)['target'], str):
+                raise MissingOptionPropertyError(name, 'target')
+
+            target = entry.get('target')
+            if not isinstance(target, str):
                 raise TypeError('target value must be a string')
         case _:
-            raise TypeError(f"option type '{tag}' is not supported")
+            raise InvalidOptionTypeError(tag)
 
 
 def validate_entries(entries: dict[str, t.ConfigEntry]) -> None:
@@ -76,20 +89,19 @@ def validate_entries(entries: dict[str, t.ConfigEntry]) -> None:
 
     Raises:
         TypeError: if an entry contains invalid types
-        ValueError: if validation fails or an alias target is not found
+        InvalidAliasTargetError: if validation fails or an alias target
+        is not found
     """
     aliases: list[tuple[str, str]] = []
 
-    for option, config in entries.items():
-        entry = cast(t.LabeledEntry, {'option': option, **config})
-        validate_entry(entry)
+    for name, entry in entries.items():
+        validate_entry(name, entry)
         tag: str = entry['type']
 
-        if tag == t.OptionType.ALIAS:
+        if tag == 'alias':
             target = cast(t.AliasEntry, entry)['target']
-            aliases.append((option, target))
+            aliases.append((name, target))
 
     for name, target in aliases:
         if target not in entries:
-            msg = f"target value '{target}' for option '{name}' was not found"
-            raise ValueError(msg)
+            raise InvalidAliasTargetError(name, target)
