@@ -47,7 +47,7 @@ def validate_entry(name: str, entry: t.ConfigEntry) -> None:
     if not isinstance(entry, dict):
         raise TypeError('option config entry must be a dictionary')
     elif 'type' not in entry:
-        MissingOptionTypeError(name)
+        raise MissingOptionTypeError(name)
 
     tag: str = entry['type']
 
