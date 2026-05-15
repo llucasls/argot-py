@@ -9,6 +9,7 @@ from argot_cli.argot_errors import (
     UnknownOptionError,
 )
 from argot_cli.parser_config import ParserConfig
+from argot_cli.argot_utils import parse_int
 
 
 class ArgParser:
@@ -184,7 +185,7 @@ class ArgParser:
 
             case 'int':
                 if value is not None and value != '':
-                    return (name, int(value))
+                    return (name, parse_int(value))
                 elif 'default' in entry:
                     new_value = cast(t.IntEntry, entry)['default']
                     return (name, new_value)
@@ -193,7 +194,7 @@ class ArgParser:
 
             case 'count':
                 if value is not None:
-                    return (name, int(value))
+                    return (name, parse_int(value))
                 return (name, 1)
 
             case 'list':
@@ -225,7 +226,7 @@ class ArgParser:
 
                     case 'int':
                         if value is not None and value != '':
-                            return (target, int(value))
+                            return (target, parse_int(value))
                         elif 'default' in target_entry:
                             new_value = cast(t.IntEntry, target_entry)['default']
                             return (target, new_value)
@@ -234,7 +235,7 @@ class ArgParser:
 
                     case 'count':
                         if value is not None:
-                            return (target, int(value))
+                            return (target, parse_int(value))
                         return (target, 1)
 
                     case 'list':
@@ -291,14 +292,14 @@ class ArgParser:
                 case 'int':
                     if i < n - 1:
                         value = arg[i + 1:n]
-                        pairs[name] = int(value)
+                        pairs[name] = parse_int(value)
                         return (False, pairs)
                     elif 'default' in entry:
                         default = cast(t.IntEntry, entry)['default']
                         pairs[name] = default
                         return (False, pairs)
                     elif value is not None:
-                        pairs[name] = int(value)
+                        pairs[name] = parse_int(value)
                         return (True, pairs)
 
                     raise NullIntError(name)
@@ -350,14 +351,14 @@ class ArgParser:
                         case 'int':
                             if i < n - 1:
                                 value = arg[i + 1:n]
-                                pairs[target] = int(value)
+                                pairs[target] = parse_int(value)
                                 return (False, pairs)
                             if 'default' in target_entry:
                                 default = cast(t.TextEntry, target_entry)['default']
                                 pairs[target] = default
                                 return (False, pairs)
                             if value is not None:
-                                pairs[target] = int(value)
+                                pairs[target] = parse_int(value)
                                 return (True, pairs)
 
                             raise NullIntError(name, target)

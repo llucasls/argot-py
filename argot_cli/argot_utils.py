@@ -19,10 +19,7 @@ def parse_int(value: str) -> int:
 
     if not INT_RE.match(value):
         raise InvalidIntError(value)
-    try:
-        return int(value)
-    except ValueError:
-        raise InvalidIntError(value) from None
+    return int(value)
 
 
 def validate_entry(name: str, entry: t.ConfigEntry) -> None:
