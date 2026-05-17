@@ -143,12 +143,18 @@ type OptionValue = bool | str | int | list[str]
 
 
 class ResultMapping[K, V](dict[K, V], metaclass=ABCMeta):
-    __slots__ = ('_frozen',)
+    __slots__ = ['_frozen']
     _frozen: bool
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._frozen = False
+
+    def __setattr__(self, name: str, value: Any, /):
+        if name == '_frozen':
+            object.__setattr__(self, '_frozen', value)
+        else:
+            raise TypeError(f'Cannot add property {name}')
 
     def __setitem__(self, key: K, value: V, /):
         if self._frozen:
@@ -164,6 +170,10 @@ class ResultMapping[K, V](dict[K, V], metaclass=ABCMeta):
         if self._frozen:
             raise TypeError('you cannot delete parsed options')
         super().clear()
+
+    def copy(self, /) -> ResultMapping[K, V]:
+        cls = self.__class__
+        return cls(self.items())
 
     def pop(self, key: K, /, *args) -> V:
         if self._frozen:
@@ -190,12 +200,18 @@ class ResultMapping[K, V](dict[K, V], metaclass=ABCMeta):
 
 
 class ResultList[T](list[T], metaclass=ABCMeta):
-    __slots__ = ('_frozen',)
+    __slots__ = ['_frozen']
     _frozen: bool
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._frozen = False
+
+    def __setattr__(self, name: str, value: Any, /):
+        if name == '_frozen':
+            object.__setattr__(self, '_frozen', value)
+        else:
+            raise TypeError(f'Cannot add property {name}')
 
     @overload
     def __setitem__(self, index: SupportsIndex, value: T, /): ...
@@ -222,6 +238,10 @@ class ResultList[T](list[T], metaclass=ABCMeta):
         if self._frozen:
             raise TypeError('you cannot delete parsed operands')
         super().clear()
+
+    def copy(self, /) -> ResultList[T]:
+        cls = self.__class__
+        return cls(self.__iter__())
 
     def extend(self, iterable: Iterable[T], /):
         if self._frozen:
