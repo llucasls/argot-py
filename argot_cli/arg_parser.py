@@ -381,7 +381,7 @@ class ArgParser:
                                 pairs[target] = value.split(sep)
                                 return (True, pairs)
 
-                            NullArgError(name, target)
+                            raise NullArgError(name, target)
 
             i += 1
         return (False, pairs)
