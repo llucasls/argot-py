@@ -131,8 +131,8 @@ class ArgParser:
                         options[name] = old_value
                     else:
                         options[name] = value
-                    if should_skip:
-                        i += 1
+                if should_skip:
+                    i += 1
             elif match_parameter is not None:
                 name, value = match_parameter.groups()
                 parameters[name] = value if value is not None else ''
