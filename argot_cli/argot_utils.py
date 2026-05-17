@@ -3,6 +3,7 @@ from typing import cast
 
 import argot_cli.argot_types as t
 from argot_cli.argot_errors import (
+    AliasTargetNotFoundError,
     InvalidIntError,
     InvalidAliasTargetError,
     InvalidOptionTypeError,
@@ -86,8 +87,9 @@ def validate_entries(entries: dict[str, t.ConfigEntry]) -> None:
 
     Raises:
         TypeError: if an entry contains invalid types
-        InvalidAliasTargetError: if validation fails or an alias target
+        AliasTargetNotFoundError: if an alias target does not exist
         is not found
+        InvalidAliasTargetError: if an alias targets another alias
     """
     aliases: list[tuple[str, str]] = []
 
@@ -101,4 +103,7 @@ def validate_entries(entries: dict[str, t.ConfigEntry]) -> None:
 
     for name, target in aliases:
         if target not in entries:
+            raise AliasTargetNotFoundError(name, target)
+        target_entry = entries[target]
+        if target_entry['type'] == 'alias':
             raise InvalidAliasTargetError(name, target)
