@@ -1,0 +1,11 @@
+[entries.output]
+  type = "text"
+
+[entries.users]
+  type = "list"
+
+[entries.logLevel]
+  type = "count"
+
+[entries.workers]
+  type = "int"

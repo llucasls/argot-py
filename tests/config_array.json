@@ -1,0 +1,13 @@
+[
+  { "option": "strict", "type": "flag" },
+  { "option": "output", "type": "text" },
+  { "option": "logFile", "type": "text", "default": "access.log" },
+  { "option": "retries", "type": "int" },
+  { "option": "threads", "type": "int", "default": 0 },
+  { "option": "logLevel", "type": "count" },
+  { "option": "tasks", "type": "list" },
+  { "option": "path", "type": "list", "sep": ":" },
+  { "option": "v", "type": "alias", "target": "logLevel" },
+  { "option": "s", "type": "alias", "target": "strict" },
+  { "option": "o", "type": "alias", "target": "output" }
+]
