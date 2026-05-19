@@ -121,6 +121,11 @@ type OptionValue = bool | str | int | list[str]
 
 
 class ResultMapping[K, V](dict[K, V], metaclass=ABCMeta):
+    """
+    Result mapping.
+    A dict-like structure used to store parsed key-value pairs.
+    Instances can be frozen to prevent further modifications.
+    """
     __slots__ = ['_frozen']
     _frozen: bool
 
@@ -136,17 +141,17 @@ class ResultMapping[K, V](dict[K, V], metaclass=ABCMeta):
 
     def __setitem__(self, key: K, value: V, /):
         if self._frozen:
-            raise TypeError('you cannot modify option values')
+            raise TypeError('you cannot modify parsed values')
         super().__setitem__(key, value)
 
     def __delitem__(self, key: K, /):
         if self._frozen:
-            raise TypeError('you cannot delete parsed options')
+            raise TypeError('you cannot delete parsed values')
         super().__delitem__(key)
 
     def clear(self, /):
         if self._frozen:
-            raise TypeError('you cannot delete parsed options')
+            raise TypeError('you cannot delete parsed values')
         super().clear()
 
     def copy(self, /) -> ResultMapping[K, V]:
@@ -155,22 +160,22 @@ class ResultMapping[K, V](dict[K, V], metaclass=ABCMeta):
 
     def pop(self, key: K, /, *args) -> V:
         if self._frozen:
-            raise TypeError('you cannot delete parsed options')
+            raise TypeError('you cannot delete parsed values')
         return super().pop(key, *args)
 
     def popitem(self, /) -> tuple[K, V]:
         if self._frozen:
-            raise TypeError('you cannot delete parsed options')
+            raise TypeError('you cannot delete parsed values')
         return super().popitem()
 
     def setdefault(self, key: K, default=None, /) -> V:
         if self._frozen:
-            raise TypeError('you cannot modify option values')
+            raise TypeError('you cannot modify parsed values')
         return super().setdefault(key, default)
 
     def update(self, *args, **kwargs):
         if self._frozen:
-            raise TypeError('you cannot modify option values')
+            raise TypeError('you cannot modify parsed values')
         super().update(*args, **kwargs)
 
     def _freeze(self):
@@ -178,6 +183,11 @@ class ResultMapping[K, V](dict[K, V], metaclass=ABCMeta):
 
 
 class ResultList[T](list[T], metaclass=ABCMeta):
+    """
+    Result list.
+    A list-like structure used to store ordered values.
+    Instances can be frozen to prevent further modifications.
+    """
     __slots__ = ['_frozen']
     _frozen: bool
 
@@ -199,22 +209,22 @@ class ResultList[T](list[T], metaclass=ABCMeta):
 
     def __setitem__(self, index, value, /):
         if self._frozen:
-            raise TypeError('you cannot modify parsed operands')
+            raise TypeError('you cannot modify parsed values')
         super().__setitem__(index, value)
 
     def __delitem__(self, index: SupportsIndex | slice[Any, Any, Any], /):
         if self._frozen:
-            raise TypeError('you cannot delete parsed operands')
+            raise TypeError('you cannot delete parsed values')
         super().__delitem__(index)
 
     def append(self, value: T, /):
         if self._frozen:
-            raise TypeError('you cannot add new operands')
+            raise TypeError('you cannot add new values')
         super().append(value)
 
     def clear(self, /):
         if self._frozen:
-            raise TypeError('you cannot delete parsed operands')
+            raise TypeError('you cannot delete parsed values')
         super().clear()
 
     def copy(self, /) -> ResultList[T]:
@@ -223,32 +233,32 @@ class ResultList[T](list[T], metaclass=ABCMeta):
 
     def extend(self, iterable: Iterable[T], /):
         if self._frozen:
-            raise TypeError('you cannot add new operands')
+            raise TypeError('you cannot add new values')
         super().extend(iterable)
 
     def insert(self, index: SupportsIndex, value: T, /):
         if self._frozen:
-            raise TypeError('you cannot add new operands')
+            raise TypeError('you cannot add new values')
         super().insert(index, value)
 
     def pop(self, index: SupportsIndex = -1, /) -> T:
         if self._frozen:
-            raise TypeError('you cannot delete parsed operands')
+            raise TypeError('you cannot delete parsed values')
         return super().pop(index)
 
     def remove(self, value: T, /):
         if self._frozen:
-            raise TypeError('you cannot delete parsed operands')
+            raise TypeError('you cannot delete parsed values')
         super().remove(value)
 
     def reverse(self, /):
         if self._frozen:
-            raise TypeError('you cannot modify parsed operands')
+            raise TypeError('you cannot modify parsed values')
         super().reverse()
 
     def sort(self, /, *, key: Callable | None = None, reverse=False):
         if self._frozen:
-            raise TypeError('you cannot modify parsed operands')
+            raise TypeError('you cannot modify parsed values')
         super().sort(key=key, reverse=reverse)
 
     def _freeze(self):
@@ -265,7 +275,7 @@ class Options(ResultMapping[str, OptionValue]):
 
     The mapping is immutable after parsing.
     """
-    __slots__ = ()
+    __slots__ = []
 
 
 class Parameters(ResultMapping[str, str]):
@@ -275,7 +285,7 @@ class Parameters(ResultMapping[str, str]):
     Parameters are parsed from arguments of the form "key=value" and do
     not depend on the parser configuration.
     """
-    __slots__ = ()
+    __slots__ = []
 
 
 class Operands(ResultList[str]):
@@ -285,7 +295,7 @@ class Operands(ResultList[str]):
     Operands are arguments that are not parsed as options or parameters.
     The list is immutable after parsing.
     """
-    __slots__ = ()
+    __slots__ = []
 
 
 class ParseResult(TypedDict):
