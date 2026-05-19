@@ -15,16 +15,6 @@ class TestParserConfig(TestCase):
         self.assertDictMatch(parser_config.get('quiet'), {'type': 'flag'})
         self.assertDictMatch(parser_config.get('output'), {'type': 'text'})
 
-    def test_create_parser_config_from_array(self):
-        parser_config = ParserConfig([
-            {'option': 'quiet', 'type': 'flag'},
-            {'option': 'output', 'type': 'text'},
-        ])
-
-        self.assertIsInstance(parser_config, ParserConfig)
-        self.assertDictMatch(parser_config.get('quiet'), {'type': 'flag'})
-        self.assertDictMatch(parser_config.get('output'), {'type': 'text'})
-
     def test_raise_error_on_invalid_input(self):
         with self.assertRaises(TypeError):
             ParserConfig(None)

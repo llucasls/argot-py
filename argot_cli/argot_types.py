@@ -114,29 +114,7 @@ type ConfigEntry = Union[
 ]
 
 
-class LabeledEntryBase(TypedDict):
-    option: str
-
-
-class LabeledFlagEntry(LabeledEntryBase, FlagEntry): ...
-class LabeledTextEntry(LabeledEntryBase, TextEntry): ...
-class LabeledIntEntry(LabeledEntryBase, IntEntry): ...
-class LabeledCountEntry(LabeledEntryBase, CountEntry): ...
-class LabeledListEntry(LabeledEntryBase, ListEntry): ...
-class LabeledAliasEntry(LabeledEntryBase, AliasEntry): ...
-
-
-type LabeledEntry = Union[
-    LabeledFlagEntry,
-    LabeledTextEntry,
-    LabeledIntEntry,
-    LabeledCountEntry,
-    LabeledListEntry,
-    LabeledAliasEntry,
-]
-
-
-type ConfigEntries = dict[str, ConfigEntry] | list[LabeledEntry]
+type ConfigEntries = dict[str, ConfigEntry]
 
 
 type OptionValue = bool | str | int | list[str]

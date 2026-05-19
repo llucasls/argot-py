@@ -11,7 +11,7 @@ from importlib.metadata import version
 
 from argot_cli.arg_parser import ArgParser
 from argot_cli.read_config import read_json_config, read_toml_config
-from argot_cli.argot_types import ConfigEntry, LabeledEntry, ConfigEntries
+from argot_cli.argot_types import ConfigEntry, ConfigEntries
 from argot_cli.parser_config import ParserConfig
 
 
@@ -21,7 +21,6 @@ __all__ = [
     "read_json_config",
     "read_toml_config",
     "ConfigEntry",
-    "LabeledEntry",
     "ConfigEntries",
     "__version__",
 ]

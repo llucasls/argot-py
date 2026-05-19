@@ -11,12 +11,6 @@ class TestReadJSONConfig(TestCase):
 
         self.assertIsInstance(parser_config, ParserConfig)
 
-    def test_return_parser_config_object_from_json_array(self):
-        file = 'tests/config_array.json'
-        parser_config = read_json_config(file)
-
-        self.assertIsInstance(parser_config, ParserConfig)
-
 
 class TestReadTOMLConfig(TestCase):
     def test_return_parser_config_object_from_toml_map(self):
