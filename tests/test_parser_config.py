@@ -5,10 +5,12 @@ from argot_cli.argot_errors import InvalidAliasTargetError
 
 
 class TestParserConfig(TestCase):
-    def test_create_parser_config_from_object(self):
+    def test_create_parser_config_from_dict(self):
         parser_config = ParserConfig({
-            'quiet': {'type': 'flag'},
-            'output': {'type': 'text'},
+            'options': {
+                'quiet': {'type': 'flag'},
+                'output': {'type': 'text'},
+            }
         })
 
         self.assertIsInstance(parser_config, ParserConfig)
@@ -22,17 +24,21 @@ class TestParserConfig(TestCase):
     def test_raise_error_on_alias_chains(self):
         with self.assertRaises(InvalidAliasTargetError):
             ParserConfig({
-                'version': {'type': 'int'},
-                'v': {'type': 'alias', 'target': 'version'},
-                'V': {'type': 'alias', 'target': 'v'},
+                'options': {
+                    'version': {'type': 'int'},
+                    'v': {'type': 'alias', 'target': 'version'},
+                    'V': {'type': 'alias', 'target': 'v'},
+                }
             })
 
     def test_read_properties_from_parser_config_object(self):
         parser_config = ParserConfig({
-            'output': {'type': 'text'},
-            'users': {'type': 'list'},
-            'logLevel': {'type': 'count'},
-            'workers': {'type': 'int'},
+            'options': {
+                'output': {'type': 'text'},
+                'users': {'type': 'list'},
+                'logLevel': {'type': 'count'},
+                'workers': {'type': 'int'},
+            }
         })
 
         self.assertEqual(len(parser_config), 4)
@@ -42,10 +48,12 @@ class TestParserConfig(TestCase):
 
     def test_iterate_over_keys(self):
         parser_config = ParserConfig({
-            'output': {'type': 'text'},
-            'users': {'type': 'list'},
-            'logLevel': {'type': 'count'},
-            'workers': {'type': 'int'},
+            'options': {
+                'output': {'type': 'text'},
+                'users': {'type': 'list'},
+                'logLevel': {'type': 'count'},
+                'workers': {'type': 'int'},
+            }
         })
 
         for key in parser_config.keys():
@@ -54,10 +62,12 @@ class TestParserConfig(TestCase):
 
     def test_iterate_over_values(self):
         parser_config = ParserConfig({
-            'output': {'type': 'text'},
-            'users': {'type': 'list'},
-            'logLevel': {'type': 'count'},
-            'workers': {'type': 'int'},
+            'options': {
+                'output': {'type': 'text'},
+                'users': {'type': 'list'},
+                'logLevel': {'type': 'count'},
+                'workers': {'type': 'int'},
+            }
         })
 
         for value in parser_config.values():
@@ -66,10 +76,12 @@ class TestParserConfig(TestCase):
 
     def test_iterate_over_items(self):
         parser_config = ParserConfig({
-            'output': {'type': 'text'},
-            'users': {'type': 'list'},
-            'logLevel': {'type': 'count'},
-            'workers': {'type': 'int'},
+            'options': {
+                'output': {'type': 'text'},
+                'users': {'type': 'list'},
+                'logLevel': {'type': 'count'},
+                'workers': {'type': 'int'},
+            }
         })
 
         for key, value in parser_config.items():
@@ -83,23 +95,27 @@ class TestParserConfig(TestCase):
 
     def test_return_object_string_representation(self):
         parser_config = ParserConfig({
-            'output': {'type': 'text'},
-            'users': {'type': 'list'},
-            'logLevel': {'type': 'count'},
-            'workers': {'type': 'int'},
+            'options': {
+                'output': {'type': 'text'},
+                'users': {'type': 'list'},
+                'logLevel': {'type': 'count'},
+                'workers': {'type': 'int'},
+            }
         })
         self.assertEqual(
             repr(parser_config),
-            "ParserConfig({'output': {'type': 'text'}, 'users': {'type': 'list'}, 'logLevel': {'type': 'count'}, 'workers': {'type': 'int'}})"
+            "ParserConfig({'options': {'output': {'type': 'text'}, 'users': {'type': 'list'}, 'logLevel': {'type': 'count'}, 'workers': {'type': 'int'}}, 'parser': {'allowUnknown': False, 'parseParameters': True, 'aggregateErrors': True}})"
         )
 
     def test_return_correct_number_of_entries(self):
         config_obj = {
-            'output': {'type': 'text'},
-            'users': {'type': 'list'},
-            'logLevel': {'type': 'count'},
-            'workers': {'type': 'int'},
+            'options': {
+                'output': {'type': 'text'},
+                'users': {'type': 'list'},
+                'logLevel': {'type': 'count'},
+                'workers': {'type': 'int'},
+            }
         }
         parser_config = ParserConfig(config_obj)
 
-        self.assertEqual(len(parser_config), len(config_obj))
+        self.assertEqual(len(parser_config), 4)

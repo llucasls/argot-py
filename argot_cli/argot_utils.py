@@ -4,6 +4,7 @@ from typing import cast
 import argot_cli.argot_types as t
 from argot_cli.argot_errors import (
     AliasTargetNotFoundError,
+    ConfigError,
     InvalidFloatError,
     InvalidIntError,
     InvalidAliasTargetError,
@@ -43,6 +44,7 @@ def validate_entry(name: str, entry: t.ConfigEntry) -> None:
     - flag, count: no additional fields are required
     - text: "default", if present, must be a string
     - int: "default", if present, must be an integer
+    - float: "default", if present, must be a number
     - list: "sep", if present, must be a string
     - alias: must define "target" as a string
 
@@ -92,7 +94,7 @@ def validate_entry(name: str, entry: t.ConfigEntry) -> None:
             raise InvalidOptionTypeError(tag)
 
 
-def validate_entries(entries: dict[str, t.ConfigEntry]) -> None:
+def validate_entries(entries: t.ConfigEntries) -> None:
     """
     Validate a mapping of configuration entries.
 
@@ -121,3 +123,32 @@ def validate_entries(entries: dict[str, t.ConfigEntry]) -> None:
         target_entry = entries[target]
         if target_entry['type'] == 'alias':
             raise InvalidAliasTargetError(name, target)
+
+
+def validate_entries_aggregate(entries: t.ConfigEntries) -> None:
+    aliases: list[tuple[str, str]] = []
+    error = ConfigError('parser configuration is not valid')
+
+    for name, entry in entries.items():
+        try:
+            validate_entry(name, entry)
+        except Exception as err:
+            error.append(err)
+            continue
+        tag: t.OptionType = entry['type']
+        if tag == 'alias':
+            target = cast(t.AliasEntry, entry)['target']
+            aliases.append((name, target))
+
+    for name, target in aliases:
+        if target not in entries:
+            error.append(AliasTargetNotFoundError(name, target))
+            continue
+        target_entry: t.ConfigEntry = entries[target]
+        if target_entry['type'] == 'alias':
+            error.append(InvalidAliasTargetError(name, target))
+
+    if len(error.errors) == 1:
+        raise error.errors[0]
+    elif len(error.errors) > 1:
+        raise error

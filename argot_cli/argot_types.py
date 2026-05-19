@@ -5,6 +5,7 @@ from typing import (
     Callable,
     Iterable,
     Literal,
+    NotRequired,
     SupportsIndex,
     TypedDict,
     Union,
@@ -132,6 +133,34 @@ type ConfigEntry = Union[
 
 
 type ConfigEntries = dict[str, ConfigEntry]
+
+
+class ParserOptions(TypedDict, total=False):
+    """
+    ParserConfig configuration flags that don't refer to a single
+    command-line option.
+    """
+
+    allowUnknown: bool
+    parseParameters: bool
+    aggregateErrors: bool
+
+
+class StrictParserOptions(TypedDict, total=True):
+    allowUnknown: bool
+    parseParameters: bool
+    aggregateErrors: bool
+
+
+class ParserConfigInput(TypedDict):
+    """
+    The input object for the ParserConfig constructor.
+    Contains configuration for specific command-line options
+    and general configuration options.
+    """
+
+    options: ConfigEntries
+    parser: NotRequired[ParserOptions]
 
 
 type OptionValue = bool | str | int | float | list[str]

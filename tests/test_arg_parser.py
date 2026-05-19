@@ -16,7 +16,7 @@ from argot_cli.argot_types import (
 
 
 class TestArgParser(TestCase):
-    entries: ConfigEntries = {
+    options: ConfigEntries = {
         'strict': { 'type': 'flag' },
         'output': { 'type': 'text' },
         'output-file': { 'type': 'alias', 'target': 'output' },
@@ -59,7 +59,7 @@ class TestArgParser(TestCase):
         'E': { 'type': 'list' },
     }
 
-    parser_config = ParserConfig(entries)
+    parser_config = ParserConfig({'options': options})
 
     parser = ArgParser(parser_config)
 
@@ -69,7 +69,7 @@ class TestArgParser(TestCase):
 
     def test_raise_error_on_invalid_parser_config(self):
         with self.assertRaises(TypeError):
-            ArgParser(self.entries)
+            ArgParser(self.options)
 
     def test_raise_error_on_invalid_input_type(self):
         with self.assertRaises(TypeError):
@@ -152,8 +152,8 @@ class TestArgParser(TestCase):
         self.assertDictEqual(result['options'], expected)
 
     def test_parse_float_options(self):
-        parser = ArgParser(ParserConfig(
-            {
+        parser = ArgParser(ParserConfig({
+            'options': {
                 'opacity': {'type': 'float'},
                 'O': {'type': 'alias', 'target': 'opacity'},
                 'z': {'type': 'float'},
@@ -161,7 +161,7 @@ class TestArgParser(TestCase):
                 'scale': {'type': 'float', 'default': 1.0},
                 'S': {'type': 'float', 'default': 1.0},
             }
-        ))
+        }))
 
         result = parser.parse(['-O', '0.95', '-S1.25', '--zoom=1.5'])
 

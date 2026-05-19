@@ -8,6 +8,19 @@ class ConfigError(Exception):
     Configuration errors are independent of user input and are
     typically raised before any parsing takes place.
     """
+    __slots__ = ['_errors']
+    _errors: list[Exception]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._errors = []
+
+    def append(self, error: Exception, /) -> None:
+        self._errors.append(error)
+
+    @property
+    def errors(self) -> list[Exception]:
+        return self._errors
 
 
 class InvalidIntError(RuntimeError):

@@ -1,7 +1,9 @@
 import json
 import tomllib
+from typing import cast
 
 from argot_cli.parser_config import ParserConfig
+from argot_cli.argot_types import ParserConfigInput
 
 
 def read_json_config(config_file: str) -> ParserConfig:
@@ -52,4 +54,4 @@ def read_toml_config(config_file: str) -> ParserConfig:
     with open(config_file, mode='rb') as file:
         result = tomllib.load(file)
 
-    return ParserConfig(result['entries'])
+    return ParserConfig(cast(ParserConfigInput, result))
