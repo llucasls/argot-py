@@ -4,6 +4,7 @@ from typing import cast
 import argot_cli.argot_types as t
 from argot_cli.argot_errors import (
     AliasTargetNotFoundError,
+    InvalidFloatError,
     InvalidIntError,
     InvalidAliasTargetError,
     InvalidOptionTypeError,
@@ -13,6 +14,7 @@ from argot_cli.argot_errors import (
 
 
 INT_RE = re.compile(r'^(-|\+)?\d+$')
+FLOAT_RE = re.compile(r'^(-|\+)?(\d+(\.\d+)?|\.\d+)([eE](-|\+)?\d+)?$')
 
 
 def parse_int(value: str) -> int:
@@ -21,6 +23,14 @@ def parse_int(value: str) -> int:
     if not INT_RE.match(value):
         raise InvalidIntError(value)
     return int(value)
+
+
+def parse_float(value: str) -> float:
+    """Parse a string with a floating-point numeric value."""
+
+    if not FLOAT_RE.match(value):
+        raise InvalidFloatError(value)
+    return float(value)
 
 
 def validate_entry(name: str, entry: t.ConfigEntry) -> None:
@@ -63,6 +73,10 @@ def validate_entry(name: str, entry: t.ConfigEntry) -> None:
             default = entry.get('default')
             if default is not None and not isinstance(default, int):
                 raise TypeError('default value must be an integer')
+        case 'float':
+            default = entry.get('default')
+            if default is not None and not isinstance(default, float):
+                raise TypeError('default value must be a number')
         case 'list':
             sep = entry.get('sep')
             if sep is not None and not isinstance(sep, str):

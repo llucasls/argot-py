@@ -29,6 +29,25 @@ class InvalidIntError(RuntimeError):
         return self._value
 
 
+class InvalidFloatError(RuntimeError):
+    """
+    Invalid float argument error.
+    Raised when an option of type "float" is provided with an associated
+    value that cannot be parsed as a number.
+    This error only applies when a value is present. Missing values are
+    reported using NullFloatError.
+    """
+    __slots__ = ['_value']
+
+    def __init__(self, value: str):
+        super().__init__(f"'{value}' is not a valid number")
+        self._value = value
+
+    @property
+    def value(self) -> str:
+        return self._value
+
+
 class NullArgError(RuntimeError):
     """
     Missing argument error.
@@ -70,6 +89,38 @@ class NullIntError(RuntimeError):
 
     This error does not cover invalid integer values. Conversion errors
     are raised separately by the underlying integer parsing logic.
+
+    If the option is an alias, the error message includes both the
+    alias name and its target.
+    """
+    __slots__ = ['_option', '_target']
+
+    def __init__(self, name: str, target: str | None = None):
+        msg: str
+        if target is not None:
+            msg = f"option '{name}' (alias for '{target}') requires an integer argument"
+        else:
+            msg = f"option '{name}' requires an integer argument"
+        super().__init__(msg)
+
+        self._option = name
+        self._target = target
+
+    @property
+    def option(self) -> str:
+        return self._option
+
+    @property
+    def target(self) -> str | None:
+        return self._target
+
+
+class NullFloatError(RuntimeError):
+    """
+    Missing float argument error.
+
+    Raised when an option of type "float" is provided without an
+    associated value.
 
     If the option is an alias, the error message includes both the
     alias name and its target.

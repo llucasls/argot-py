@@ -16,6 +16,7 @@ type OptionType = Union[
     Literal['flag'],
     Literal['text'],
     Literal['int'],
+    Literal['float'],
     Literal['count'],
     Literal['list'],
     Literal['alias'],
@@ -26,6 +27,7 @@ type AliasType = Union[
     Literal['flag'],
     Literal['text'],
     Literal['int'],
+    Literal['float'],
     Literal['count'],
     Literal['list'],
 ]
@@ -70,6 +72,20 @@ class IntEntry(TypedDict, total=False):
     default: int
 
 
+class FloatEntry(TypedDict, total=False):
+    """
+    Float option.
+
+    Accepts a numeric value.
+
+    If a default value is provided, the option may be specified without
+    an explicit value. Short options with a default value only accept an
+    associated value when provided in the same argument (e.g. "-f0.95").
+    """
+    type: Literal['float']
+    default: float
+
+
 class CountEntry(TypedDict):
     """
     Count option.
@@ -108,6 +124,7 @@ type ConfigEntry = Union[
     FlagEntry,
     TextEntry,
     IntEntry,
+    FloatEntry,
     CountEntry,
     ListEntry,
     AliasEntry,
@@ -117,7 +134,7 @@ type ConfigEntry = Union[
 type ConfigEntries = dict[str, ConfigEntry]
 
 
-type OptionValue = bool | str | int | list[str]
+type OptionValue = bool | str | int | float | list[str]
 
 
 class ResultMapping[K, V](dict[K, V], metaclass=ABCMeta):

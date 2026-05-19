@@ -151,6 +151,20 @@ class TestArgParser(TestCase):
 
         self.assertDictEqual(result['options'], expected)
 
+    def test_parse_float_options(self):
+        parser = ArgParser(ParserConfig(
+            {
+                'opacity': {'type': 'float'},
+                'O': {'type': 'alias', 'target': 'opacity'},
+                'z': {'type': 'float'},
+                'zoom': {'type': 'alias', 'target': 'z'},
+                'scale': {'type': 'float', 'default': 1.0},
+                'S': {'type': 'float', 'default': 1.0},
+            }
+        ))
+
+        result = parser.parse(['-O', '0.95', '-S1.25', '--zoom=1.5'])
+
     def test_parse_count_options(self):
         result = self.parser.parse(['--loglevel=2', '-pp', '-p'])
 

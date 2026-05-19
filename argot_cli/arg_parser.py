@@ -5,11 +5,12 @@ from typing import Final, TypedDict, cast
 import argot_cli.argot_types as t
 from argot_cli.argot_errors import (
     NullArgError,
+    NullFloatError,
     NullIntError,
     UnknownOptionError,
 )
 from argot_cli.parser_config import ParserConfig
-from argot_cli.argot_utils import parse_int
+from argot_cli.argot_utils import parse_float, parse_int
 
 
 class ArgParser:
@@ -192,6 +193,15 @@ class ArgParser:
 
                 raise NullIntError(name)
 
+            case 'float':
+                if value is not None and value != '':
+                    return (name, parse_float(value))
+                elif 'default' in entry:
+                    new_value = cast(t.FloatEntry, entry)['default']
+                    return (name, new_value)
+
+                raise NullFloatError(name)
+
             case 'count':
                 if value is not None:
                     return (name, parse_int(value))
@@ -233,6 +243,15 @@ class ArgParser:
 
                         raise NullIntError(name, target)
 
+                    case 'float':
+                        if value is not None and value != '':
+                            return (target, parse_float(value))
+                        elif 'default' in target_entry:
+                            new_value = cast(t.FloatEntry, target_entry)['default']
+                            return (target, new_value)
+
+                        raise NullFloatError(name, target)
+
                     case 'count':
                         if value is not None:
                             return (target, parse_int(value))
@@ -268,7 +287,7 @@ class ArgParser:
             except KeyError:
                 raise UnknownOptionError(name) from None
             tag: str = entry['type']
-            default: str | int
+            default: str | int | float
 
             match tag:
                 case 'flag':
@@ -303,6 +322,21 @@ class ArgParser:
                         return (True, pairs)
 
                     raise NullIntError(name)
+
+                case 'float':
+                    if i < n - 1:
+                        value = arg[i + 1:n]
+                        pairs[name] = parse_float(value)
+                        return (False, pairs)
+                    elif 'default' in entry:
+                        default = cast(t.FloatEntry, entry)['default']
+                        pairs[name] = default
+                        return (False, pairs)
+                    elif value is not None:
+                        pairs[name] = parse_float(value)
+                        return (True, pairs)
+
+                    raise NullFloatError(name)
 
                 case 'count':
                     old_value = cast(int, pairs.get(name, 0))
@@ -362,6 +396,21 @@ class ArgParser:
                                 return (True, pairs)
 
                             raise NullIntError(name, target)
+
+                        case 'float':
+                            if i < n - 1:
+                                value = arg[i + 1:n]
+                                pairs[target] = parse_float(value)
+                                return (False, pairs)
+                            if 'default' in target_entry:
+                                default = cast(t.FloatEntry, target_entry)['default']
+                                pairs[target] = default
+                                return (False, pairs)
+                            if value is not None:
+                                pairs[target] = parse_float(value)
+                                return (True, pairs)
+
+                            raise NullFloatError(name, target)
 
                         case 'count':
                             old_value = cast(int, pairs.get(target, 0))

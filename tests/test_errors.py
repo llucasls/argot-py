@@ -3,6 +3,7 @@ from tests import TestCase
 from argot_cli.argot_errors import (
     InvalidIntError,
     NullArgError,
+    NullFloatError,
     NullIntError,
     UnknownOptionError,
     InvalidOptionTypeError,
@@ -64,7 +65,7 @@ class TestErrors(TestCase):
             raise error
         self.assertEqual(
             cm.exception.args[0],
-            "option 'i' requires a numeric argument"
+            "option 'i' requires an integer argument"
         )
 
         option = 'M'
@@ -73,6 +74,33 @@ class TestErrors(TestCase):
         self.assertEqual(error.option, option)
         self.assertEqual(error.target, target)
         with self.assertRaises(NullIntError) as cm:
+            raise error
+        self.assertEqual(
+            cm.exception.args[0],
+            "option 'M' (alias for 'max') requires an integer argument"
+        )
+
+    def test_null_float_error(self) -> None:
+        option: str
+        target: str
+
+        option = 'f'
+        error = NullFloatError(option)
+        self.assertEqual(error.option, option)
+        self.assertIsNone(error.target)
+        with self.assertRaises(NullFloatError) as cm:
+            raise error
+        self.assertEqual(
+            cm.exception.args[0],
+            "option 'f' requires a numeric argument"
+        )
+
+        option = 'M'
+        target = 'max'
+        error = NullFloatError(option, target)
+        self.assertEqual(error.option, option)
+        self.assertEqual(error.target, target)
+        with self.assertRaises(NullFloatError) as cm:
             raise error
         self.assertEqual(
             cm.exception.args[0],
