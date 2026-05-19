@@ -354,7 +354,7 @@ class ArgParser:
                                 pairs[target] = parse_int(value)
                                 return (False, pairs)
                             if 'default' in target_entry:
-                                default = cast(t.TextEntry, target_entry)['default']
+                                default = cast(t.IntEntry, target_entry)['default']
                                 pairs[target] = default
                                 return (False, pairs)
                             if value is not None:
