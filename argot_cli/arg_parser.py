@@ -97,50 +97,54 @@ class ArgParser:
         new_value: t.OptionValue
         match_parameter: re.Match | None
         next_arg: str | None
-        while i < n:
-            arg = arg_list[i]
+        try:
+            while i < n:
+                arg = arg_list[i]
 
-            if stop_parsing:
-                operands.append(arg)
-                i += 1
-                continue
-
-            if arg == '--':
-                stop_parsing = True
-                i += 1
-                continue
-
-            match_parameter = self.parameter_exp.match(arg)
-            if self.long_opt_exp.match(arg):
-                name, new_value = self._parse_long_option(arg)
-                options[name] = new_value
-            elif self.short_opt_exp.match(arg):
-                try:
-                    next_arg = arg_list[i+1]
-                except IndexError:
-                    next_arg = None
-                should_skip, pairs = self._parse_short_option(arg, next_arg)
-                for name, value in pairs.items():
-                    if self._configs[name]['type'] == 'count':
-                        old_value = cast(int, options.get(name, 0))
-                        new_value = cast(int, value)
-                        options[name] = old_value + new_value
-                    elif self._configs[name]['type'] == 'list':
-                        old_value = cast(list[str], options.get(name, []))
-                        new_value = cast(list[str], value)
-                        old_value.extend(new_value)
-                        options[name] = old_value
-                    else:
-                        options[name] = value
-                if should_skip:
+                if stop_parsing:
+                    operands.append(arg)
                     i += 1
-            elif self._configs.parse_parameters and match_parameter is not None:
-                name, value = match_parameter.groups()
-                parameters[name] = value if value is not None else ''
-            else:
-                operands.append(arg)
+                    continue
 
-            i += 1
+                if arg == '--':
+                    stop_parsing = True
+                    i += 1
+                    continue
+
+                match_parameter = self.parameter_exp.match(arg)
+                if self.long_opt_exp.match(arg):
+                    name, new_value = self._parse_long_option(arg)
+                    options[name] = new_value
+                elif self.short_opt_exp.match(arg):
+                    try:
+                        next_arg = arg_list[i+1]
+                    except IndexError:
+                        next_arg = None
+                    should_skip, pairs = self._parse_short_option(arg, next_arg)
+                    for name, value in pairs.items():
+                        if self._configs[name]['type'] == 'count':
+                            old_value = cast(int, options.get(name, 0))
+                            new_value = cast(int, value)
+                            options[name] = old_value + new_value
+                        elif self._configs[name]['type'] == 'list':
+                            old_value = cast(list[str], options.get(name, []))
+                            new_value = cast(list[str], value)
+                            old_value.extend(new_value)
+                            options[name] = old_value
+                        else:
+                            options[name] = value
+                    if should_skip:
+                        i += 1
+                elif self._configs.parse_parameters and match_parameter is not None:
+                    name, value = match_parameter.groups()
+                    parameters[name] = value if value is not None else ''
+                else:
+                    operands.append(arg)
+
+                i += 1
+        except UnknownOptionError:
+            if not self._configs.allow_unknown:
+                raise
 
         options._freeze()
         parameters._freeze()
