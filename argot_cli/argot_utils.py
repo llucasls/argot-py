@@ -77,7 +77,7 @@ def validate_entry(name: str, entry: t.ConfigEntry) -> None:
                 raise TypeError('default value must be an integer')
         case 'float':
             default = entry.get('default')
-            if default is not None and not isinstance(default, float):
+            if default is not None and not isinstance(default, (float, int)):
                 raise TypeError('default value must be a number')
         case 'list':
             sep = entry.get('sep')

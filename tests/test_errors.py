@@ -1,6 +1,7 @@
 from tests import TestCase
 
 from argot_cli.argot_errors import (
+    InvalidFloatError,
     InvalidIntError,
     NullArgError,
     NullFloatError,
@@ -24,6 +25,17 @@ class TestErrors(TestCase):
         self.assertEqual(
             cm.exception.args[0],
             "' 40 ' is not a valid integer"
+        )
+
+    def test_invalid_float_error(self) -> None:
+        value: str = ' 40 '
+        error = InvalidFloatError(value)
+        self.assertEqual(error.value, value)
+        with self.assertRaises(InvalidFloatError) as cm:
+            raise error
+        self.assertEqual(
+            cm.exception.args[0],
+            "' 40 ' is not a valid number"
         )
 
     def test_null_arg_error(self) -> None:

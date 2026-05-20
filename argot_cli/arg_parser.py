@@ -170,6 +170,7 @@ class ArgParser:
 
         tag: t.OptionType = entry['type']
         new_value: t.OptionValue
+        default: str | int | float
 
         match tag:
             case 'flag':
@@ -179,8 +180,8 @@ class ArgParser:
                 if value is not None:
                     return (name, value)
                 elif 'default' in entry:
-                    new_value = cast(t.TextEntry, entry)['default']
-                    return (name, new_value)
+                    default = cast(t.TextEntry, entry)['default']
+                    return (name, default)
 
                 raise NullArgError(name)
 
@@ -188,8 +189,8 @@ class ArgParser:
                 if value is not None and value != '':
                     return (name, parse_int(value))
                 elif 'default' in entry:
-                    new_value = cast(t.IntEntry, entry)['default']
-                    return (name, new_value)
+                    default = cast(t.IntEntry, entry)['default']
+                    return (name, default)
 
                 raise NullIntError(name)
 
@@ -197,7 +198,8 @@ class ArgParser:
                 if value is not None and value != '':
                     return (name, parse_float(value))
                 elif 'default' in entry:
-                    new_value = cast(t.FloatEntry, entry)['default']
+                    default = cast(t.FloatEntry, entry)['default']
+                    new_value = float(default)
                     return (name, new_value)
 
                 raise NullFloatError(name)
@@ -229,8 +231,8 @@ class ArgParser:
                         if value is not None:
                             return (target, value)
                         elif 'default' in target_entry:
-                            new_value = cast(t.TextEntry, target_entry)['default']
-                            return (target, new_value)
+                            default = cast(t.TextEntry, target_entry)['default']
+                            return (target, default)
 
                         raise NullArgError(name, target)
 
@@ -238,8 +240,8 @@ class ArgParser:
                         if value is not None and value != '':
                             return (target, parse_int(value))
                         elif 'default' in target_entry:
-                            new_value = cast(t.IntEntry, target_entry)['default']
-                            return (target, new_value)
+                            default = cast(t.IntEntry, target_entry)['default']
+                            return (target, default)
 
                         raise NullIntError(name, target)
 
@@ -247,7 +249,8 @@ class ArgParser:
                         if value is not None and value != '':
                             return (target, parse_float(value))
                         elif 'default' in target_entry:
-                            new_value = cast(t.FloatEntry, target_entry)['default']
+                            default = cast(t.FloatEntry, target_entry)['default']
+                            new_value = float(default)
                             return (target, new_value)
 
                         raise NullFloatError(name, target)
@@ -330,7 +333,7 @@ class ArgParser:
                         return (False, pairs)
                     elif 'default' in entry:
                         default = cast(t.FloatEntry, entry)['default']
-                        pairs[name] = default
+                        pairs[name] = float(default)
                         return (False, pairs)
                     elif value is not None:
                         pairs[name] = parse_float(value)
@@ -404,7 +407,7 @@ class ArgParser:
                                 return (False, pairs)
                             if 'default' in target_entry:
                                 default = cast(t.FloatEntry, target_entry)['default']
-                                pairs[target] = default
+                                pairs[target] = float(default)
                                 return (False, pairs)
                             if value is not None:
                                 pairs[target] = parse_float(value)

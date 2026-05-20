@@ -1,9 +1,15 @@
 from tests import TestCase
 
-from argot_cli.argot_utils import parse_int, validate_entry, validate_entries
+from argot_cli.argot_utils import (
+    parse_int,
+    parse_float,
+    validate_entry,
+    validate_entries,
+)
 from argot_cli.argot_types import ConfigEntries, ConfigEntry
 from argot_cli.argot_errors import (
     AliasTargetNotFoundError,
+    InvalidFloatError,
     InvalidIntError,
     InvalidAliasTargetError,
     InvalidOptionTypeError,
@@ -32,6 +38,26 @@ class TestParseInt(TestCase):
             cm.exception.args[0],
             "'	2 ' is not a valid integer"
         )
+
+
+class TestParseFloat(TestCase):
+    def test_return_float(self):
+        self.assertEqual(parse_float('212'), 212.0)
+        self.assertEqual(parse_float('-12'), -12.0)
+        self.assertEqual(parse_float('.25'), 0.25)
+        self.assertEqual(parse_float('1e6'), 1_000_000.0)
+
+    def test_raise_error(self):
+        with self.assertRaises(InvalidFloatError) as cm:
+            parse_float("	2 ")
+        self.assertEqual(
+            cm.exception.args[0],
+            "'	2 ' is not a valid number"
+        )
+        with self.assertRaises(InvalidFloatError) as cm:
+            parse_float('NaN')
+        with self.assertRaises(InvalidFloatError) as cm:
+            parse_float('Infinity')
 
 
 class TestValidateEntry(TestCase):
@@ -75,6 +101,15 @@ class TestValidateEntry(TestCase):
         self.assertEqual(
             cm.exception.args[0],
             "default value must be an integer"
+        )
+
+    def test_raise_error_if_float_default_value_is_not_a_float(self):
+        entry = {'type': 'float', 'default': '12.5'}
+        with self.assertRaises(TypeError) as cm:
+            validate_entry('jobs', entry)
+        self.assertEqual(
+            cm.exception.args[0],
+            "default value must be a number"
         )
 
     def test_raise_error_if_list_sep_value_is_not_a_string(self):

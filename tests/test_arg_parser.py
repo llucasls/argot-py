@@ -4,6 +4,7 @@ from argot_cli.parser_config import ParserConfig
 from argot_cli.arg_parser import ArgParser
 from argot_cli.argot_errors import (
     NullArgError,
+    NullFloatError,
     NullIntError,
     UnknownOptionError,
 )
@@ -160,10 +161,60 @@ class TestArgParser(TestCase):
                 'zoom': {'type': 'alias', 'target': 'z'},
                 'scale': {'type': 'float', 'default': 1.0},
                 'S': {'type': 'float', 'default': 1.0},
+                's': {'type': 'alias', 'target': 'S'},
+                'bg-scale': {'type': 'alias', 'target': 'scale'},
+                'bg-opacity': {'type': 'alias', 'target': 'opacity'},
             }
         }))
 
         result = parser.parse(['-O', '0.95', '-S1.25', '--zoom=1.5'])
+        expected = {
+            'opacity': 0.95,
+            'S': 1.25,
+            'z': 1.5,
+        }
+        self.assertDictEqual(result['options'], expected)
+
+        result = parser.parse(['--opacity=0.8', '-z1', '--scale=2'])
+        expected = {
+            'opacity': 0.8,
+            'z': 1.0,
+            'scale': 2.0,
+        }
+        self.assertDictEqual(result['options'], expected)
+
+        result = parser.parse(['--scale', '-S'])
+        expected = {
+            'scale': 1.0,
+            'S': 1.0,
+        }
+        self.assertDictEqual(result['options'], expected)
+
+        result = parser.parse(['--bg-scale', '-s'])
+        expected = {
+            'scale': 1.0,
+            'S': 1.0,
+        }
+        self.assertDictEqual(result['options'], expected)
+
+        result = parser.parse(['-z', '2', '-O.95'])
+        expected = {
+            'z': 2.0,
+            'opacity': 0.95,
+        }
+        self.assertDictEqual(result['options'], expected)
+
+        with self.assertRaises(NullFloatError):
+            parser.parse(['--opacity'])
+
+        with self.assertRaises(NullFloatError):
+            parser.parse(['-z'])
+
+        with self.assertRaises(NullFloatError):
+            parser.parse(['-O'])
+
+        with self.assertRaises(NullFloatError):
+            parser.parse(['--bg-opacity'])
 
     def test_parse_count_options(self):
         result = self.parser.parse(['--loglevel=2', '-pp', '-p'])
