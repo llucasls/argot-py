@@ -100,6 +100,20 @@ class TestArgParser(TestCase):
         self.assertDictEqual(result['parameters'], expected_parameters)
         self.assertListEqual(result['operands'], expected_operands)
 
+    def test_parse_parameters_as_normal_operands(self) -> None:
+        parser = ArgParser(ParserConfig({
+            'options': self.options,
+            'parser': {
+                'parseParameters': False
+            }
+        }))
+        result = parser.parse(['CC=clang', 'ENV=', '=', '=test'])
+
+        self.assertListEqual(
+            result['operands'],
+            ['CC=clang', 'ENV=', '=', '=test']
+        )
+
     def test_parse_flag_options(self):
         result = self.parser.parse(['--strict', 'CC=clang', 'main.o', '-n'])
 

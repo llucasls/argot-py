@@ -134,7 +134,7 @@ class ArgParser:
                         options[name] = value
                 if should_skip:
                     i += 1
-            elif match_parameter is not None:
+            elif self._configs.parse_parameters and match_parameter is not None:
                 name, value = match_parameter.groups()
                 parameters[name] = value if value is not None else ''
             else:
