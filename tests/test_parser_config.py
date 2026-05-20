@@ -2,6 +2,10 @@ from tests import TestCase
 
 from argot_cli.parser_config import ParserConfig
 from argot_cli.argot_errors import InvalidAliasTargetError
+from argot_cli.argot_types import (
+    ConfigEntries,
+    ParserOptions,
+)
 
 
 class TestParserConfig(TestCase):
@@ -17,9 +21,50 @@ class TestParserConfig(TestCase):
         self.assertDictMatch(parser_config.get('quiet'), {'type': 'flag'})
         self.assertDictMatch(parser_config.get('output'), {'type': 'text'})
 
+    def test_read_parser_options_from_parser_config_object(self) -> None:
+        options: ConfigEntries = {
+            'output': {'type': 'text'},
+            'users': {'type': 'list'},
+            'logLevel': {'type': 'count'},
+            'workers': {'type': 'int'},
+        }
+        parser: ParserOptions = {
+            'allowUnknown': False,
+            'parseParameters': True,
+            'aggregateErrors': False,
+        }
+        parser_config = ParserConfig({
+            'options': options,
+            'parser': parser,
+        })
+
+        self.assertEqual(parser_config.allow_unknown, False)
+        self.assertEqual(parser_config.parse_parameters, True)
+        self.assertEqual(parser_config.aggregate_errors, False)
+
     def test_raise_error_on_invalid_input(self):
         with self.assertRaises(TypeError):
             ParserConfig(None)
+
+        with self.assertRaises(TypeError):
+            ParserConfig({
+                'options': [
+                    {'option': 'output', 'type': 'text'},
+                    {'option': 'users', 'type': 'list'},
+                ]
+            })
+
+        with self.assertRaises(TypeError):
+            ParserConfig({
+                'options': {
+                    'a': {'type': 'flag'},
+                    'o': {'type': 'text'},
+                },
+                'parser': [
+                    {'allowUnknown': True},
+                    {'parseParameters': True},
+                ]
+            })
 
     def test_raise_error_on_alias_chains(self):
         with self.assertRaises(InvalidAliasTargetError):

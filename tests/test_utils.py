@@ -1,14 +1,17 @@
 from tests import TestCase
+from typing import cast
 
 from argot_cli.argot_utils import (
     parse_int,
     parse_float,
     validate_entry,
     validate_entries,
+    validate_entries_aggregate,
 )
 from argot_cli.argot_types import ConfigEntries, ConfigEntry
 from argot_cli.argot_errors import (
     AliasTargetNotFoundError,
+    ConfigError,
     InvalidFloatError,
     InvalidIntError,
     InvalidAliasTargetError,
@@ -151,7 +154,7 @@ class TestValidateEntry(TestCase):
 
 class TestValidateEntries(TestCase):
     def test_do_not_throw_on_valid_entries(self) -> None:
-        entries: dict[str, ConfigEntry] = {
+        entries: ConfigEntries = {
             'strict': { 'type': 'flag' },
             'output': { 'type': 'text' },
             'logFile': { 'type': 'text', 'default': 'access.log' },
@@ -167,10 +170,56 @@ class TestValidateEntries(TestCase):
         validate_entries(entries)
 
     def test_raise_error_if_target_option_is_not_found(self) -> None:
-        entries: dict[str, ConfigEntry] = {
+        entries: ConfigEntries = {
             's': { 'type': 'alias', 'target': 'strict' },
             'notStrict': { 'type': 'flag' },
         }
         with self.assertRaises(AliasTargetNotFoundError) as cm:
             validate_entries(entries)
         self.assertIsInstance(cm.exception, AliasTargetNotFoundError)
+
+    def test_raise_error_on_alias_to_another_alias(self) -> None:
+        entries: ConfigEntries = {
+            'list': {'type': 'flag'},
+            'l': {'type': 'alias', 'target': 'list'},
+            'L': {'type': 'alias', 'target': 'l'},
+        }
+        with self.assertRaises(InvalidAliasTargetError):
+            validate_entries(entries)
+
+
+class TestValidateEntriesAggregate(TestCase):
+    def test_do_not_throw_on_valid_entries(self) -> None:
+        entries: ConfigEntries = {
+            'strict': { 'type': 'flag' },
+            'output': { 'type': 'text' },
+            'logFile': { 'type': 'text', 'default': 'access.log' },
+            'retries': { 'type': 'int' },
+            'threads': { 'type': 'int', 'default': 0 },
+            'logLevel': { 'type': 'count' },
+            'tasks': { 'type': 'list' },
+            'path': { 'type': 'list', 'sep': ':' },
+            'v': { 'type': 'alias', 'target': 'logLevel' },
+            's': { 'type': 'alias', 'target': 'strict' },
+            'o': { 'type': 'alias', 'target': 'output' },
+        }
+        validate_entries_aggregate(entries)
+
+    def test_raise_aggregate_error(self) -> None:
+        entries = cast(ConfigEntries, {
+            'o': {'type': 'string'},
+            'i': {'type': 'number'},
+            's': {'type': 'alias', 'target': 'strict'},
+            'notStrict': {'type': 'flag'},
+            'list': {'type': 'flag'},
+            'l': {'type': 'alias', 'target': 'list'},
+            'L': {'type': 'alias', 'target': 'l'},
+        })
+        with self.assertRaises(ConfigError) as cm:
+            validate_entries_aggregate(entries)
+        error = cm.exception
+        self.assertEqual(len(error.errors), 4)
+        self.assertIsInstance(error.errors[0], InvalidOptionTypeError) # type string
+        self.assertIsInstance(error.errors[1], InvalidOptionTypeError) # type number
+        self.assertIsInstance(error.errors[2], AliasTargetNotFoundError) # target strict
+        self.assertIsInstance(error.errors[3], InvalidAliasTargetError) # target l
