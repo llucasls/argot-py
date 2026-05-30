@@ -97,20 +97,20 @@ class ArgParser:
         new_value: t.OptionValue
         match_parameter: re.Match | None
         next_arg: str | None
-        try:
-            while i < n:
-                arg = arg_list[i]
+        while i < n:
+            arg = arg_list[i]
 
-                if stop_parsing:
-                    operands.append(arg)
-                    i += 1
-                    continue
+            if stop_parsing:
+                operands.append(arg)
+                i += 1
+                continue
 
-                if arg == '--':
-                    stop_parsing = True
-                    i += 1
-                    continue
+            if arg == '--':
+                stop_parsing = True
+                i += 1
+                continue
 
+            try:
                 match_parameter = self.parameter_exp.match(arg)
                 if self.long_opt_exp.match(arg):
                     name, new_value = self._parse_long_option(arg)
