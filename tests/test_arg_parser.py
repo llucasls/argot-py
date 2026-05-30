@@ -391,3 +391,190 @@ class TestArgParser(TestCase):
             self.parser.parse(['esto', '--no-ecxiste'])
         with self.assertRaises(UnknownOptionError):
             self.parser.parse(['-Z'])
+
+
+class TestSlice(TestCase):
+    def test_separate_head_and_tail_arrays(self):
+        configs = ParserConfig({
+            'options': {
+                'repo': {'type': 'text'},
+                'git-dir': {'type': 'text'},
+                'r': {'type': 'alias', 'target': 'repo'},
+                'd': {'type': 'alias', 'target': 'git-dir'},
+            },
+            'parser': {
+                'parseParameters': True,
+            }
+        })
+        parser = ArgParser(configs)
+
+        url = 'https://github.com/llucasls/bare-estate.git'
+        user_input = [
+            'estate',
+            'GIT_DIR=some_dir',
+            'clone',
+            '-r',
+            'bare_estate',
+            url,
+            'bare-estate',
+        ]
+
+        head, tail = parser.slice(user_input, 0)
+        self.assertListEqual(head, [])
+        self.assertListEqual(tail, [
+            'estate',
+            'GIT_DIR=some_dir',
+            'clone',
+            '-r',
+            'bare_estate',
+            url,
+            'bare-estate',
+        ])
+
+        head, tail = parser.slice(user_input, 1)
+        self.assertListEqual(head, ['estate'])
+        self.assertListEqual(tail, [
+            'GIT_DIR=some_dir',
+            'clone',
+            '-r',
+            'bare_estate',
+            url,
+            'bare-estate',
+        ])
+
+        head, tail = parser.slice(user_input, 2)
+        self.assertListEqual(head, ['estate', 'GIT_DIR=some_dir', 'clone'])
+        self.assertListEqual(tail, ['-r', 'bare_estate', url, 'bare-estate'])
+
+        head, tail = parser.slice(user_input, 3)
+        self.assertListEqual(head, [
+            'estate',
+            'GIT_DIR=some_dir',
+            'clone',
+            '-r',
+            'bare_estate',
+            url,
+        ])
+        self.assertListEqual(tail, ['bare-estate'])
+
+    def test_separate_head_and_tail_without_parsing_parameters(self):
+        configs = ParserConfig({
+            'options': {
+                'repo': {'type': 'text'},
+                'git-dir': {'type': 'text'},
+                'r': {'type': 'alias', 'target': 'repo'},
+                'd': {'type': 'alias', 'target': 'git-dir'},
+                'dry-run': {'type': 'flag'},
+            },
+            'parser': {
+                'parseParameters': False,
+            }
+        })
+        parser = ArgParser(configs)
+
+        url = 'https://github.com/llucasls/bare-estate.git'
+        user_input = [
+            'estate',
+            '--dry-run',
+            'GIT_DIR=some_dir',
+            'clone',
+            '-r',
+            'bare_estate',
+            url,
+            'bare-estate',
+        ]
+
+        head, tail = parser.slice(user_input, 0)
+        self.assertListEqual(head, [])
+        self.assertListEqual(tail, [
+            'estate',
+            '--dry-run',
+            'GIT_DIR=some_dir',
+            'clone',
+            '-r',
+            'bare_estate',
+            url,
+            'bare-estate'
+        ])
+
+        head, tail = parser.slice(user_input, 2)
+        self.assertListEqual(head, ['estate', '--dry-run', 'GIT_DIR=some_dir'])
+        self.assertListEqual(
+            tail,
+            ['clone', '-r', 'bare_estate', url, 'bare-estate']
+        )
+
+    def test_separate_head_and_tail_with_unknown_options(self):
+        configs = ParserConfig({
+            'options': {
+                'repo': {'type': 'text'},
+                'git-dir': {'type': 'text'},
+                'r': {'type': 'alias', 'target': 'repo'},
+                'd': {'type': 'alias', 'target': 'git-dir'},
+            },
+            'parser': {
+                'allowUnknown': True,
+            }
+        })
+        parser = ArgParser(configs)
+
+        url = 'https://github.com/llucasls/bare-estate.git'
+        user_input = [
+            'estate',
+            '--dry-run',
+            'clone',
+            '-r',
+            'bare_estate',
+            url,
+            'bare-estate',
+        ]
+
+        head, tail = parser.slice(user_input, 2)
+        self.assertListEqual(head, ['estate', '--dry-run', 'clone'])
+        self.assertListEqual(tail, ['-r', 'bare_estate', url, 'bare-estate'])
+
+    def test_separate_head_and_tail_with_double_dash_terminator(self):
+        configs = ParserConfig({
+            'options': {
+                'repo': {'type': 'text'},
+                'git-dir': {'type': 'text'},
+                'r': {'type': 'alias', 'target': 'repo'},
+                'd': {'type': 'alias', 'target': 'git-dir'},
+                'dry-run': {'type': 'flag'},
+                'n': {'type': 'alias', 'target': 'dry-run'},
+            },
+            'parser': {
+                'parseParameters': True,
+            }
+        })
+        parser = ArgParser(configs)
+
+        head, tail = parser.slice(['estate', '-r', 'vim', 'init'], 2)
+        self.assertListEqual(head, ['estate', '-r', 'vim', 'init'])
+        self.assertListEqual(tail, [])
+
+        head, tail = parser.slice(['estate', '--', '-r', 'vim', 'init'], 2)
+        self.assertListEqual(head, ['estate', '--', '-r'])
+        self.assertListEqual(tail, ['vim', 'init'])
+
+    def test_raise_error_when_slicing_input_with_unknown_option(self):
+        configs = ParserConfig({
+            'options': {
+                'repo': {'type': 'text'},
+                'git-dir': {'type': 'text'},
+                'r': {'type': 'alias', 'target': 'repo'},
+                'd': {'type': 'alias', 'target': 'git-dir'},
+            },
+            'parser': {
+                'allowUnknown': False,
+            }
+        })
+        parser = ArgParser(configs)
+
+        # does not raise when stopping before unknown option
+        parser.slice(['estate', '-n', 'GIT_DIR=~/git/bare', 'init'], 1)
+
+        with self.assertRaises(UnknownOptionError):
+            parser.slice(['estate', '-n', 'GIT_DIR=~/git/bare', 'init'], 2)
+        with self.assertRaises(NullArgError):
+            parser.slice(['estate', 'init', '-r'], 3)

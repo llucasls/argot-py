@@ -140,11 +140,10 @@ class ArgParser:
                     parameters[name] = value if value is not None else ''
                 else:
                     operands.append(arg)
-
-                i += 1
-        except UnknownOptionError:
-            if not self._configs.allow_unknown:
-                raise
+            except UnknownOptionError:
+                if not self._configs.allow_unknown:
+                    raise
+            i += 1
 
         options._freeze()
         parameters._freeze()
@@ -154,6 +153,57 @@ class ArgParser:
             'parameters': parameters,
             'operands': operands,
         }
+
+    def slice(
+        self,
+        arg_list: list[str],
+        index: int,
+        /
+    ) -> tuple[list[str], list[str]]:
+        i = 0
+        operands = 0
+        stop_parsing = False
+        n: Final[int] = len(arg_list)
+        next_arg: str | None
+
+        while i < n:
+            if operands >= index:
+                break
+
+            arg = arg_list[i]
+            if arg == '--' and not stop_parsing:
+                stop_parsing = True
+                i += 1
+                continue
+
+            if stop_parsing:
+                operands += 1
+                i += 1
+                continue
+
+            try:
+                next_arg = arg_list[i+1]
+            except IndexError:
+                next_arg = None
+
+            try:
+                match_parameter = self.parameter_exp.match(arg)
+                if self.long_opt_exp.match(arg):
+                    self._parse_long_option(arg)
+                elif self.short_opt_exp.match(arg):
+                    should_skip, _ = self._parse_short_option(arg, next_arg)
+                    if should_skip:
+                        i += 1
+                elif self._configs.parse_parameters and match_parameter is not None:
+                    pass
+                else:
+                    operands += 1
+            except UnknownOptionError:
+                if not self._configs.allow_unknown:
+                    raise
+            i += 1
+
+        return (arg_list[:i], arg_list[i:])
 
     def _parse_long_option(self, arg: str) -> tuple[str, t.OptionValue]:
         name: str
